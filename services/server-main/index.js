@@ -4,10 +4,42 @@ const keys = require("./keys");
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const client = require("prom-client");
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
+
+// Prometheus metrics setup
+const register = new client.Registry();
+client.collectDefaultMetrics({
+  register,
+  prefix: "gratitude_server_main_",
+});
+
+const httpRequestDurationSeconds = new client.Histogram({
+  name: "http_request_duration_seconds",
+  help: "Duration of HTTP requests in seconds",
+  labelNames: ["method", "route", "code"],
+  buckets: [0.05, 0.1, 0.2, 0.5, 1, 2, 5],
+});
+register.registerMetric(httpRequestDurationSeconds);
+
+// Track request durations for all routes
+app.use((req, res, next) => {
+  const end = httpRequestDurationSeconds.startTimer();
+  res.on("finish", () => {
+    const route = req.route && req.route.path ? req.route.path : req.path;
+    end({ method: req.method, route, code: res.statusCode });
+  });
+  next();
+});
+
+// Expose Prometheus metrics
+app.get("/metrics", async (req, res) => {
+  res.set("Content-Type", register.contentType);
+  res.send(await register.metrics());
+});
 
 // Postgres client setup
 const { Pool } = require("pg");

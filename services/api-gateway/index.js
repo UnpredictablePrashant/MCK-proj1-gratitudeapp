@@ -5,6 +5,7 @@ const grpc = require("@grpc/grpc-js");
 const protoLoader = require("@grpc/proto-loader");
 const path = require("path");
 const OpenAI = require("openai");
+const client = require("prom-client");
 
 const PROTO_PATH = path.join(__dirname, "protos", "entries.proto");
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
@@ -26,6 +27,37 @@ const openAiClient = OPENAI_API_KEY ? new OpenAI({ apiKey: OPENAI_API_KEY }) : n
 const app = express();
 app.use(cors());
 app.use(bodyParser.json({ limit: "1mb" }));
+
+// Prometheus metrics setup
+const register = new client.Registry();
+client.collectDefaultMetrics({
+  register,
+  prefix: "gratitude_api_gateway_",
+});
+
+const httpRequestDurationSeconds = new client.Histogram({
+  name: "http_request_duration_seconds",
+  help: "Duration of HTTP requests in seconds",
+  labelNames: ["method", "route", "code"],
+  buckets: [0.05, 0.1, 0.2, 0.5, 1, 2, 5],
+});
+register.registerMetric(httpRequestDurationSeconds);
+
+// Track request durations for all routes
+app.use((req, res, next) => {
+  const end = httpRequestDurationSeconds.startTimer();
+  res.on("finish", () => {
+    const route = req.route && req.route.path ? req.route.path : req.path;
+    end({ method: req.method, route, code: res.statusCode });
+  });
+  next();
+});
+
+// Expose Prometheus metrics
+app.get("/metrics", async (req, res) => {
+  res.set("Content-Type", register.contentType);
+  res.send(await register.metrics());
+});
 
 const ensureOpenAi = (res) => {
   if (!openAiClient) {

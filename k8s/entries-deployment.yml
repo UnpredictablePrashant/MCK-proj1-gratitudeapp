@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: entries
-          image: prashantdey/merndemoapp:entriesv1.0
+          image: "236032563814.dkr.ecr.us-east-2.amazonaws.com/trainingapp-client:entries-v2"
           ports:
             - containerPort: 50051
           env:

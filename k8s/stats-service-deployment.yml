@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: stats-service
-          image: prashantdey/merndemoapp:statsservicev1.0
+          image: "236032563814.dkr.ecr.us-east-2.amazonaws.com/trainingapp-client:stats-service-v2"
           ports:
             - containerPort: 50053
           env:

@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: moods-service
-          image: prashantdey/merndemoapp:moodsservicev1.0
+          image: 236032563814.dkr.ecr.us-east-2.amazonaws.com/trainingapp-client:moods-service-v2
           ports:
             - containerPort: 50052
           env:

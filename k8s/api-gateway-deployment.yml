@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          image: prashantdey/merndemoapp:apigatewayv1.0
+          image: 236032563814.dkr.ecr.us-east-2.amazonaws.com/trainingapp-client@sha256:cc87a649d0e05946412eb7b66c172692ffd810203a842d797af84a5f6332dfd9
           ports:
             - containerPort: 5000
           env:
